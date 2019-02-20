@@ -67,10 +67,19 @@ public interface IUserService {
 
     /**
      * 登陆下重置密码
-     * @param user 用户
-     * @param password 旧密码
+     *
+     * @param user        用户
+     * @param password    旧密码
      * @param passwordNew 新密码
      * @return
      */
     ServerResponse<String> resetPassword(User user, String password, String passwordNew);
+
+    /**
+     * 判断用户是否是管理员
+     *
+     * @param user
+     * @return
+     */
+    ServerResponse checkAdminRole(User user);
 }

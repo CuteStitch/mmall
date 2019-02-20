@@ -156,4 +156,17 @@ public class UserServiceImpl implements IUserService {
         }
         return ServerResponse.createByErrorMessage("密码修改失败");
     }
+
+
+
+    /*----------分类模块-----------*/
+
+    @Override
+    public ServerResponse checkAdminRole(User user) {
+
+        if (user != null && user.getRole().intValue() == Const.Role.ROLE_ADMIN) {
+            return ServerResponse.createBySuccess();
+        }
+        return ServerResponse.createByError();
+    }
 }
