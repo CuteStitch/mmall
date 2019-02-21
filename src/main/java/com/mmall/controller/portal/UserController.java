@@ -1,6 +1,7 @@
 package com.mmall.controller.portal;
 
 import com.mmall.common.Const;
+import com.mmall.common.ResponseCode;
 import com.mmall.common.ServerResponse;
 import com.mmall.pojo.User;
 import com.mmall.service.IUserService;
@@ -18,7 +19,7 @@ import javax.servlet.http.HttpSession;
  * @时间：2019/2/20 14:53
  */
 @Controller
-@RequestMapping("/user")
+@RequestMapping("/user/")
 public class UserController {
 
     @Autowired
@@ -154,5 +155,46 @@ public class UserController {
         }
         //进行密码重置
         return iUserService.resetPassword(user, passwordOld, passwordNew);
+    }
+
+    /**
+     * 修改用户信息
+     *
+     * @param session
+     * @param user
+     * @return
+     */
+    @RequestMapping(value = "update_information.do", method = RequestMethod.POST)
+    @ResponseBody
+    public ServerResponse<User> updateInformation(HttpSession session, User user) {
+        User userOld = (User) session.getAttribute(Const.CURRENT_USER);
+        if (userOld == null) {
+            return ServerResponse.createByErrorMessage("用户未登陆！无法获取用户信息");
+        }
+        user.setId(userOld.getId());
+        user.setUsername(userOld.getUsername());
+        //更新
+        ServerResponse<User> serverResponse = iUserService.updateInformation(user);
+        if (serverResponse.isSuccess()) {
+            serverResponse.getData().setUsername(userOld.getUsername());
+            session.setAttribute(Const.CURRENT_USER, serverResponse.getData());//重新设置session
+        }
+        return serverResponse;
+    }
+
+    /**
+     * 获取用户信息
+     *
+     * @param session
+     * @return
+     */
+    @RequestMapping(value = "get_information.do", method = RequestMethod.POST)
+    @ResponseBody
+    public ServerResponse<User> getUserInformation(HttpSession session) {
+        User userOld = (User) session.getAttribute(Const.CURRENT_USER);
+        if (userOld == null) {
+            return ServerResponse.createByErrorCodeMessage(ResponseCode.NEED_LOGIN.getCode(),"用户未登陆！无法获取用户信息");
+        }
+        return iUserService.getUserInformation(userOld.getId());
     }
 }

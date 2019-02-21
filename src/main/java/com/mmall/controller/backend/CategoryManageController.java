@@ -19,7 +19,7 @@ import javax.servlet.http.HttpSession;
  * 分类控制层
  */
 @Controller
-@RequestMapping("/manage/category")
+@RequestMapping("/manage/category/")
 public class CategoryManageController {
 
     @Autowired

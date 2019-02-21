@@ -82,4 +82,20 @@ public interface IUserService {
      * @return
      */
     ServerResponse checkAdminRole(User user);
+
+    /**
+     * 修改用户信息
+     *
+     * @param user
+     * @return
+     */
+    ServerResponse<User> updateInformation(User user);
+
+    /**
+     * 获取用户信息
+     *
+     * @param userId 用户id
+     * @return
+     */
+    ServerResponse<User> getUserInformation(Integer userId);
 }
