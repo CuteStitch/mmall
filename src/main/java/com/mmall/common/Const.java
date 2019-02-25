@@ -24,6 +24,14 @@ public class Const {
         int ROLE_ADMIN = 1;//管理员
     }
 
+    public interface Cart {
+        int CART_CHECKED = 1;//选中
+        int CART_UNCHECKED = 0;//未选中
+
+        String LIMIT_NUM_FAIL = "LIMIT_NUM_FAIL";//限制失败
+        String LIMIT_NUM_SUCCESS = "LIMIT_NUM_SUCCESS";//限制成功
+    }
+
     public enum ProductStatusEnum {
         ON_SALE(1, "在线");
 
