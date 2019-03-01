@@ -1,5 +1,8 @@
 package com.mmall.controller.portal;
 
+import com.alipay.api.AlipayApiException;
+import com.alipay.api.internal.util.AlipaySignature;
+import com.alipay.demo.trade.config.Configs;
 import com.google.common.collect.Maps;
 import com.mmall.common.Const;
 import com.mmall.common.ServerResponse;
@@ -52,12 +55,18 @@ public class OederController {
         return iOrderService.pay(orderNo, user.getId(), path);
     }
 
+    /**
+     * 支付宝回调接口
+     *
+     * @param request 支付宝的回调请求
+     * @return
+     */
     @RequestMapping("alipay_callback.do")
     @ResponseBody
     public Object alipayCallback(HttpServletRequest request) {
         Map parameterMap = request.getParameterMap();//支付宝回调时会将所有数据放到request中，所以我们需要自己从中取
 
-        Map newHashMap = Maps.newHashMap();//新建一个结果集存放结果
+        Map<String, String> newHashMap = Maps.newHashMap();//新建一个结果集存放结果
         for (Iterator iterator = parameterMap.keySet().iterator(); iterator.hasNext(); ) {
             //遍历map
             String name = (String) iterator.next();//按顺序获取key
@@ -72,7 +81,44 @@ public class OederController {
         logger.info("支付宝回调：sign:{},trade_status:{},参数:{}", parameterMap.get("sign"), parameterMap.get("trade_status"), parameterMap.toString());
 
         //重要：进行回调验证（验证该回调是否是由支付宝发起的）
+        try {
+            boolean result = AlipaySignature.rsaCheckV2(newHashMap, Configs.getPublicKey(), "utf_8", Configs.getSignType());
+            if (!result) {//如果回调验证不通过：不是由支付宝发起
+                return ServerResponse.createByErrorMessage("非法请求！系统已拒绝");
+            }
+        } catch (AlipayApiException e) {
+            logger.error("支付宝回调异常", e);
+        }
+        //todo:进行结果判断
 
-        return null;
+        ServerResponse result = iOrderService.callBack(newHashMap);
+        if (result.isSuccess()) {
+            return Const.AlipayCallBack.RESPONSE_SUCCESS;
+        }
+        return Const.AlipayCallBack.RESPONSE_FAILED;
     }
+
+
+    /**
+     * 前端轮询查询订单状态
+     *
+     * @param session
+     * @param orderNo
+     * @return
+     */
+    @RequestMapping("query_order_pay_status.do")
+    @ResponseBody
+    public ServerResponse queryOrderPayStatus(HttpSession session, Long orderNo) {
+        //先判断登陆
+        User user = (User) session.getAttribute(Const.CURRENT_USER);
+        if (user == null) {
+            return ServerResponse.createByErrorMessage("用户未登陆");
+        }
+        ServerResponse<Boolean> booleanServerResponse = iOrderService.queryOrderPayStatus(orderNo, user.getId());
+        if (booleanServerResponse.isSuccess()) {
+            return ServerResponse.createBySuccess(true);
+        }
+        return ServerResponse.createBySuccess(false);
+    }
+
 }

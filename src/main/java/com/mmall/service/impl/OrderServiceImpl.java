@@ -14,13 +14,17 @@ import com.alipay.demo.trade.service.impl.AlipayTradeServiceImpl;
 import com.alipay.demo.trade.utils.ZxingUtils;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
+import com.mmall.common.Const;
 import com.mmall.common.ServerResponse;
 import com.mmall.dao.OrderItemMapper;
 import com.mmall.dao.OrderMapper;
+import com.mmall.dao.PayInfoMapper;
 import com.mmall.pojo.Order;
 import com.mmall.pojo.OrderItem;
+import com.mmall.pojo.PayInfo;
 import com.mmall.service.IOrderService;
 import com.mmall.util.BigDecimalUtil;
+import com.mmall.util.DateTimeUtil;
 import com.mmall.util.FTPUtil;
 import com.mmall.util.PropertiesUtil;
 import org.apache.commons.lang.StringUtils;
@@ -52,6 +56,9 @@ public class OrderServiceImpl implements IOrderService {
 
     @Autowired
     private OrderItemMapper orderItemMapper;
+
+    @Autowired
+    private PayInfoMapper payInfoMapper;
 
     @Override
     public ServerResponse pay(Long orderNo, Integer userId, String path) {
@@ -184,5 +191,49 @@ public class OrderServiceImpl implements IOrderService {
             }
             log.info("body:" + response.getBody());
         }
+    }
+
+    @Override
+    public ServerResponse callBack(Map<String, String> params) {
+
+        //从回调中取出参数值
+        Long orderNo = Long.parseLong(params.get("out_trade_no"));//订单号
+        String tradeNo = params.get("trade_no");//交易号
+        String tradeStatus = params.get("trade_status");//交易状态
+        //根据订单号查询该订单
+        Order order = orderMapper.selectByOrderNo(orderNo);
+        if (order == null) {
+            return ServerResponse.createByErrorMessage("该交易订单不存在！交易失败");
+        }
+        if (order.getStatus() >= Const.OrderStatusEnum.ORDER_PAYED.getCode()) {//如果已完成支付
+            return ServerResponse.createBySuccess("支付宝重复调用");
+        }
+        if (tradeStatus.equals(Const.AlipayCallBack.TRADE_STATUS_TRADE_SUCCESS)) {//交易状态为已付款
+            order.setPaymentTime(DateTimeUtil.strToDate(params.get("gmt_payment")));//更新支付时间
+            order.setStatus(Const.OrderStatusEnum.ORDER_PAYED.getCode());//修改订单状态为已支付
+            orderMapper.updateByPrimaryKey(order);
+        }
+        //记录支付信息
+        PayInfo payInfo = new PayInfo();
+        payInfo.setOrderNo(orderNo);
+        payInfo.setUserId(order.getUserId());
+        payInfo.setPayPlatform(Const.PayPlatformEnum.ALIPAY.getCode());//支付方式
+        payInfo.setPlatformNumber(tradeNo);
+        payInfo.setPlatformStatus(tradeStatus);
+        payInfoMapper.insert(payInfo);
+
+        return ServerResponse.createBySuccess();
+    }
+
+    @Override
+    public ServerResponse<Boolean> queryOrderPayStatus(Long orderNo, Integer userId) {
+        Order order = orderMapper.selectByUserIdAndOrderNo(userId, orderNo);//根据用户id和订单id查询该订单
+        if (order == null) {
+            return ServerResponse.createByErrorMessage("用户不存在该订单");
+        }
+        if (order.getStatus() >= Const.OrderStatusEnum.ORDER_PAYED.getCode()) {//已支付
+            return ServerResponse.createBySuccess();
+        }
+        return ServerResponse.createByError();
     }
 }
