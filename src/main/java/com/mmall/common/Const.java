@@ -79,6 +79,15 @@ public class Const {
         public String getValue() {
             return value;
         }
+
+        public static OrderStatusEnum codeOf(int code) {
+            for (OrderStatusEnum paymentTypeEnum : values()) {
+                if (paymentTypeEnum.getCode() == code) {
+                    return paymentTypeEnum;
+                }
+            }
+            throw new RuntimeException("没有找到对应的枚举");
+        }
     }
 
     /**
@@ -141,7 +150,7 @@ public class Const {
                     return paymentTypeEnum;
                 }
             }
-            throw new RuntimeException("么有找到对应的枚举");
+            throw new RuntimeException("没有找到对应的枚举");
         }
 
     }

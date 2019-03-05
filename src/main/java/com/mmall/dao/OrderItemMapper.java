@@ -26,4 +26,19 @@ public interface OrderItemMapper {
      * @return
      */
     List<OrderItem> getByUserIdAndOrderNo(@Param("userId") Integer userId, @Param("orderNo") Long orderNo);
+
+    /**
+     * 批量插入
+     *
+     * @param orderItems
+     */
+    void batchInsert(@Param("orderItems") List<OrderItem> orderItems);
+
+    /**
+     * 据订单号获取订单中包含的商品信息
+     *
+     * @param orderNo 订单号
+     * @return
+     */
+    List<OrderItem> getByOrderNo(@Param("orderNo") Long orderNo);
 }

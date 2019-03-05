@@ -13,6 +13,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 
 import javax.servlet.http.HttpServletRequest;
@@ -80,7 +81,7 @@ public class OederController {
         }
         logger.info("支付宝回调：sign:{},trade_status:{},参数:{}", parameterMap.get("sign"), parameterMap.get("trade_status"), parameterMap.toString());
 
-        //重要：进行回调验证（验证该回调是否是由支付宝发起的）
+        //重要：进行回调验证（验证该回调是否是由支付宝发+起的）
         try {
             boolean result = AlipaySignature.rsaCheckV2(newHashMap, Configs.getPublicKey(), "utf_8", Configs.getSignType());
             if (!result) {//如果回调验证不通过：不是由支付宝发起
@@ -121,4 +122,94 @@ public class OederController {
         return ServerResponse.createBySuccess(false);
     }
 
+    /**
+     * 创建订单
+     *
+     * @param session
+     * @param shippingId
+     * @return
+     */
+    @RequestMapping("create.do")
+    @ResponseBody
+    public ServerResponse create(HttpSession session, Integer shippingId) {
+        //先判断登陆
+        User user = (User) session.getAttribute(Const.CURRENT_USER);
+        if (user == null) {
+            return ServerResponse.createByErrorMessage("用户未登陆");
+        }
+        return iOrderService.createOrder(user.getId(), shippingId);
+    }
+
+
+    /**
+     * 取消订单
+     *
+     * @param session
+     * @param orderNo 订单号
+     * @return
+     */
+    @RequestMapping("cancle.do")
+    @ResponseBody
+    public ServerResponse cancle(HttpSession session, Long orderNo) {
+        //先判断登陆
+        User user = (User) session.getAttribute(Const.CURRENT_USER);
+        if (user == null) {
+            return ServerResponse.createByErrorMessage("用户未登陆");
+        }
+        return iOrderService.cancle(user.getId(), orderNo);
+    }
+
+    /**
+     * 获取购物车选中的商品信息
+     *
+     * @param session
+     * @return
+     */
+    @RequestMapping("get_order_cart_product.do")
+    @ResponseBody
+    public ServerResponse getOrderCartProduct(HttpSession session) {
+        //先判断登陆
+        User user = (User) session.getAttribute(Const.CURRENT_USER);
+        if (user == null) {
+            return ServerResponse.createByErrorMessage("用户未登陆");
+        }
+        return iOrderService.getOrderCartProduct(user.getId());
+    }
+
+    /**
+     * 获取订单详情
+     *
+     * @param session
+     * @param orderNo 订单号
+     * @return
+     */
+    @RequestMapping("detail.do")
+    @ResponseBody
+    public ServerResponse detail(HttpSession session, Long orderNo) {
+        //先判断登陆
+        User user = (User) session.getAttribute(Const.CURRENT_USER);
+        if (user == null) {
+            return ServerResponse.createByErrorMessage("用户未登陆");
+        }
+        return iOrderService.getOrderDetail(user.getId(), orderNo);
+    }
+
+    /**
+     * 查看用户的订单（分页）
+     *
+     * @param session
+     * @param pageNum
+     * @param pageSize
+     * @return
+     */
+    @RequestMapping("list.do")
+    @ResponseBody
+    public ServerResponse list(HttpSession session, @RequestParam(value = "pageNum", defaultValue = "1") int pageNum, @RequestParam(value = "pageSize", defaultValue = "10") int pageSize) {
+        //先判断登陆
+        User user = (User) session.getAttribute(Const.CURRENT_USER);
+        if (user == null) {
+            return ServerResponse.createByErrorMessage("用户未登陆");
+        }
+        return iOrderService.getOrderList(user.getId(), pageNum, pageSize);
+    }
 }

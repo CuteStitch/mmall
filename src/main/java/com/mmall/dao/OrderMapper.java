@@ -1,7 +1,10 @@
 package com.mmall.dao;
 
 import com.mmall.pojo.Order;
+import com.mmall.pojo.User;
 import org.apache.ibatis.annotations.Param;
+
+import java.util.List;
 
 public interface OrderMapper {
     int deleteByPrimaryKey(Integer id);
@@ -32,4 +35,19 @@ public interface OrderMapper {
      * @return
      */
     Order selectByOrderNo(Long orderNo);
+
+    /**
+     * 根据用户id查询订单
+     *
+     * @param userId
+     * @return
+     */
+    List<Order> selectByUserId(Integer userId);
+
+    /**
+     * 后台查询所有订单
+     *
+     * @return
+     */
+    List<Order> selectOrder();
 }
